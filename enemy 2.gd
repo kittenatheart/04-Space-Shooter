@@ -1,13 +1,46 @@
-extends Node
+extends KinematicBody2D
 
-# Declare member variables here. Examples:
-# var a = 2
-# var b = "text"
+export var limit_y = 350
+export var score = 10
+export var speed = 2.0
+export var move_probability = 0.05
+export var fire_probability = 0.5
 
-# Called when the node enters the scene tree for the first time.
+onready var EnemyBullet = load("res://Scenes/Enemy2Bullet.tscn")
+
+
+var ready = false
+
+var new_position = Vector2(0,0)
+
+func get_new_position():
+	var VP = get_viewport_rect().size
+	new_position.x = randi() % int(VP.x)
+	new_position.y = min(randi() % int(VP.y), int(VP.y) - limit_y)
+	$Tween.interpolate_property(self, "position", position, new_position, speed, Tween.TRANS_EXPO, Tween.EASE_IN_OUT)
+	ready = true
+
+func die():
+	queue_free()
+
 func _ready():
-	pass # Replace with function body.
+	randomize()
+	get_new_position()
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-#func _process(delta):
-#	pass
+
+func _physics_process(delta):
+	if ready:
+		$Tween.start()
+		ready = false
+	
+
+
+func _on_Timer_timeout():
+	if randf() < move_probability:
+		get_new_position()
+	if randf() < fire_probability:
+		var b = EnemyBullet.instance()
+		b.position = position
+		b.position.y += 25
+		get_node("/root/Game/Enemy Bullets").add_child(b)
+		
